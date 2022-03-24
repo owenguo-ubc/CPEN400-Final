@@ -37,7 +37,18 @@ def build_vqa_qnode(unitary) -> qml.QNode:
 
     return qnode
 
-
+def projection_norm_squared(a, b):
+    """
+    Takes two state vectors a, and b (in the format returned from qml.state)
+    and calculates |<a|b>|^2
+    """
+    # Convert |a> to <a|
+    a = a.conjugate()
+    # Calculate <a|b>
+    proj = np.dot(a, b)
+    # return |<a|b>|^2
+    return proj * np.conj(proj)
+    
 def pg_vqa_compile(unitary) -> List[float]:
     vqa_qnode = build_vqa_qnode(unitary)
 
