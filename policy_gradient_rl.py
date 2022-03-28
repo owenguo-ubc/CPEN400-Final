@@ -1,17 +1,7 @@
 from typing import List
+from constants import *
 import numpy as np
 from matplotlib import plot as plt
-
-
-# From page 6 fig 6. description
-T = 500
-# Define n as larger for more precision
-n = 69
-# From page 10
-m = max(15*n, n**2)
-# Define this
-NUM_THETA_ROLLOUTS = 420
-
 
 # Sample policy and return list of thetas
 def sample_gaussian_policy(mu: List[float], sigm) -> List[float]:
@@ -35,11 +25,11 @@ def get_covariance(timestep: int, dimension: int) -> np.array:
     :param dimension: The dimension of the diagonal matrices
     """
     # Dynamically create sigma_i which is diag(10^-2) of n by n where n is number of thetas
-    sigma_i = np.diag(np.full(n, 10 ** -2))
+    sigma_i = np.diag(np.full(N_VAL, 10**-2))
     # Dynamically create sigma_f which is diag(10^-5) of n by n where n is number of thetas
-    sigma_f = np.diag(np.full(n, 10 ** -5))
+    sigma_f = np.diag(np.full(N_VAL, 10**-5))
     # Compute the covirance to return
-    covariance = (((1 - timestep) / T) * sigma_i) + (timestep / (T * sigma_f))
+    covariance = (((1 - timestep) / T_VAL) * sigma_i) + (timestep / (T_VAL * sigma_f))
     return covirance
 
 
@@ -62,14 +52,15 @@ def evaluate_fidelity(thetas: List[float], k):
     # Project the resulting state from calling qnode onto |k>
     projection_norm_squared(state, k)
 
+
 # Implement Equation (3)
 def evaluate_objective_function(mu, sigm) -> float:
     J = 0.0
     # Outer sigma
-    for _ in range(m):
+    for _ in range(M_VAL):
         # k is a quantum state which is a random sampled state
         k = get_uniform_k()
-        p_k = 1 / m
+        p_k = 1 / M_VAL
         # Inner sigma
         # "Monte Carlo part"
         inner_term = 0
@@ -97,13 +88,9 @@ def step_and_optimize_mu(old_mu) -> List[float]:
     return new_mu
 
 
-MAX_ITER_REINFORCE = 999 # TODO: what should this be
-# Number of times to evaluate J at a certain step for graphing purposes
-GRAPH_NUM = 555
-
 # This is the high level algorithm which does policy gradient approach
 def algorithm():
-    mu = 0 # TODO: choose starting mu
+    mu = 0  # TODO: choose starting mu
     sigma = get_covariance(0)
 
     J = []
