@@ -74,6 +74,8 @@ def create_anzatz_circuit(n_wires, thetas, n_layers=1):
             print(w, w+1)
             apply_rzz(thetas[θ_counter + int(w/2)], [w, w+1])
 
+    return θ_counter
+
 def apply_rzz(theta, wires):
     """Double Qubit gates
 
@@ -143,4 +145,4 @@ if __name__ == "__main__":
     layers = int(args.num_layers)
     U = np.identity(size)
 
-    print(qml.draw(build_vqa_qnode(U))(range(size), range(layers*size), n_layers=layers))
+    print(qml.draw(build_vqa_qnode(U))(range(size), range(layers * 2 * (int(args.num_qubits))), n_layers=layers))
