@@ -25,14 +25,22 @@ def lookup_gaussian(mu: List[float], sigma, x) -> float:
     pass
 
 
-# Bottom of page 9 formula
-# covariance(t) = (1-t/T)sigma_i + t/Tsigma_f
-# Returns square matrix for covariance
 def get_covariance(timestep: int, dimension: int) -> np.array:
-    # dynamically create sigma_i which is diag(10^-2) of n by n where n is number of thetas
-    # dynamically create sigma_f which is diag(10^-5) of n by n where n is number of thetas
-    # TODO: Ross
-    pass
+    """
+    This implements the formula on the bottom of page 9
+    covariance(t) = ((1 - t/ T) * sigma_i) + (t / (T * sigma_f))
+    Returns square matrix for covariance
+
+    :param timestep: The timestep at which to get the covariance
+    :param dimension: The dimension of the diagonal matrices
+    """
+    # Dynamically create sigma_i which is diag(10^-2) of n by n where n is number of thetas
+    sigma_i = np.diag(np.full(n, 10 ** -2))
+    # Dynamically create sigma_f which is diag(10^-5) of n by n where n is number of thetas
+    sigma_f = np.diag(np.full(n, 10 ** -5))
+    # Compute the covirance to return
+    covariance = (((1 - timestep) / T) * sigma_i) + (timestep / (T * sigma_f))
+    return covirance
 
 
 def get_uniform_k():
