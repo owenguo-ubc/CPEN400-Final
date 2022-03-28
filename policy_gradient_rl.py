@@ -57,7 +57,7 @@ def evaluate_fidelity(thetas: List[float], k):
     qnode = build_vqa_qnode(thetas)
     state = qnode(k, thetas)
     # Project the resulting state from calling qnode onto |k>
-    projection_norm_squared(state, k)
+    return projection_norm_squared(state, k)
 
 
 # Implement Equation (3)
