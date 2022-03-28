@@ -2,6 +2,18 @@ from typing import List
 from constants import *
 import numpy as np
 from matplotlib import plot as plt
+import math
+
+def guassian_distribution(x: float, mu: float, sigma):
+    """
+    Implements the guassian distribution which can be randomly sampled
+    See equation 2 on page 3 of the paper for more information
+
+    https://stackoverflow.com/questions/12412895/how-to-calculate-probability-in-a-normal-distribution-given-mean-standard-devi
+    """
+    denom = sqrt((2 * math.pi * abs(sigma)))
+    numerator = math.exp(-(x - mu) * (sigma**-1) * (x - mu)**T_VAL)
+    return numerator / denom
 
 # Sample policy and return list of thetas
 def sample_gaussian_policy(mu: List[float], sigm) -> List[float]:
