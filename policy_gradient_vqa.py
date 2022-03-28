@@ -14,6 +14,7 @@ def _build_V(num_qbits, thetas):
     """
     TODO:
     """
+    # print(qml.draw(qnode)())
     pass
 
 
