@@ -32,9 +32,17 @@ def get_covariance(timestep: int, dimension: int) -> np.array:
     return covirance
 
 
-def get_uniform_k():
-    # TODO: Kobe
-    pass
+def get_uniform_k(num_qubits):
+    """Placeholder random uniform sample
+
+    :param num_qubits: How many qubits to create a random state for
+
+    """
+    random_state = [
+        np.random.random(1) + np.random.random(1) * 1j for _ in range(num_qubits)
+    ]
+    state = Z / np.linalg.norm(random_state)
+    return state
 
 
 def evaluate_fidelity(thetas: List[float], k):
