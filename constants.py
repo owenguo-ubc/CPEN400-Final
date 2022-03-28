@@ -13,13 +13,16 @@ NUM_LAYERS = 10
 N_VAL = 2 * NUM_QUBITS * NUM_LAYERS
 
 # From page 10
-M_VAL = max(15 * n, n**2)
+M_VAL = max(15 * NUM_QUBITS, NUM_QUBITS**2)
 
-# TODO: Define this
-NUM_THETA_ROLLOUTS = 420
+# TODO: We don't actually know this value yet
+NUM_THETA_ROLLOUTS = 20
 
-# TODO: what should this be
-MAX_ITER_REINFORCE = 999
+MAX_ITER_REINFORCE = 3000
 
 # Number of times to evaluate J at a certain step for graphing purposes
-GRAPH_NUM = 555
+GRAPH_NUM = 30
+
+EPSILON = 10e-8
+GAMMA = 0.9
+ETA = 3e-3

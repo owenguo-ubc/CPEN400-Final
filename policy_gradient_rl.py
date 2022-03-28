@@ -1,20 +1,24 @@
 from typing import List
 from constants import *
 import numpy as np
-from matplotlib import plot as plt
+# from matplotlib import plot as plt
 import math
+from policy_gradient_vqa import *
+from scipy.stats import multivariate_normal
+
 
 # Sample policy and return list of thetas
 def sample_gaussian_policy(mu: List[float], sigm) -> List[float]:
     return np.random.normal(mu, sigm)
 
+
 # Given x (which is vector) what is the probability of that occuring in the gaussian function given mu and sigma
 def lookup_gaussian(mu: List[float], sigma, x) -> float:
     # TODO Akhil: Equation (2)
-    pass
+    return multivariate_normal(mean=mu, cov=sigma).pdf(x)
 
 
-def get_covariance(timestep: int, dimension: int) -> np.array:
+def get_covariance(timestep: int) -> np.array:
     """
     This implements the formula on the bottom of page 9
     covariance(t) = ((1 - t/ T) * sigma_i) + (t / (T * sigma_f))
@@ -24,25 +28,29 @@ def get_covariance(timestep: int, dimension: int) -> np.array:
     :param dimension: The dimension of the diagonal matrices
     """
     # Dynamically create sigma_i which is diag(10^-2) of n by n where n is number of thetas
-    sigma_i = np.diag(np.full(N_VAL, 10**-2))
+    sigma_i = np.diag([10**-2 for _ in range(N_VAL)])
     # Dynamically create sigma_f which is diag(10^-5) of n by n where n is number of thetas
-    sigma_f = np.diag(np.full(N_VAL, 10**-5))
-    # Compute the covirance to return
+    sigma_f = np.diag([10**-5 for _ in range(N_VAL)])
+    # Compute the covariance to return
     covariance = (((1 - timestep) / T_VAL) * sigma_i) + (timestep / (T_VAL * sigma_f))
-    return covirance
+    covariance[np.isnan(covariance)] = 0
+    return covariance
 
 
-def get_uniform_k(num_qubits):
+def get_uniform_k():
     """Placeholder random uniform sample
 
     :param num_qubits: How many qubits to create a random state for
 
     """
-    random_state = [
-        np.random.random(1) + np.random.random(1) * 1j for _ in range(num_qubits)
-    ]
-    state = Z / np.linalg.norm(random_state)
-    return state
+    # random_state = [
+    #     np.random.random(1) + np.random.random(1) * 1j for _ in range(NUM_QUBITS)
+    # ]
+
+    # state = Z / np.linalg.norm(random_state)
+
+    # TODO: Actual implementation please
+    return np.random.uniform(low=0, high=1, size=NUM_QUBITS)
 
 
 def evaluate_fidelity(thetas: List[float], k):
@@ -82,39 +90,76 @@ def evaluate_objective_function(mu, sigm) -> float:
     return J
 
 
-# Super High Level Realm, still need to fledge out
+def estimate_gradient(mu, sigma, theta):
+    """"
+    Implements equation 4 found on page 3
+    """
+    J_delta = []
 
-# This would be implementing Equation (4)
-def estimate_gradient():
-    pass
+    for _ in range(M_VAL):
+        # k is a quantum state which is a random sampled state
+        k = get_uniform_k()
+        p_k = 1 / M_VAL
+        # Inner sigma
+        # "Monte Carlo part"
+        inner_term = 0
+        for _ in range(NUM_THETA_ROLLOUTS):
+            # First term of Equation 2(0)
+            theta = sample_gaussian_policy(mu, sigma)
+            prob = lookup_gaussian(mu, sigma, theta)
+            # Output of the ansatz circuit is the second term is Equation (3)
+            fid = evaluate_fidelity(theta, k)
+
+            log_mu_gradient_estimate = log_likelyhood_gradient_mu(mu, sigma, theta)
+
+            inner_term = log_mu_gradient_estimate * prob * fid
+        J_delta += p_k * inner_term
+
+    return J_delta
+
+
+def log_likelyhood_gradient_mu(mu, sigma, thetas):
+    return (np.linalg.inv(sigma) * (thetas - mu))
+
+
+def gradient_variance(previous_variance, current_gradient):
+    return ( (GAMMA * previous_variance) + (1 - GAMMA) * (np.dot(current_gradient, current_gradient)) )
 
 
 # This would be doing one step of optimizing mu after gradient estimation
 # Needs to implement Equations (12) and (13)
-def step_and_optimize_mu(old_mu) -> List[float]:
-    return new_mu
+def step_and_optimize_mu(old_mu, previous_variance, mu_gradient) -> tuple[List[float], float]:
+    new_variance = gradient_variance(previous_variance, mu_gradient)
+    new_mu = old_mu + ( ETA * (mu_gradient / np.sqrt((new_variance + EPSILON)) ) )
+    return (new_mu, new_variance)
 
 
 # This is the high level algorithm which does policy gradient approach
 def algorithm():
-    mu = 0  # TODO: choose starting mu
+    mu = [0 for _ in range(N_VAL)]  # TODO: choose starting mu
     sigma = get_covariance(0)
+    # initial variance ???
+    gradient_variance = 0
 
     J = []
     for _ in range(MAX_ITER_REINFORCE):
 
         J_step = []
         for _ in range(GRAPH_NUM):
-            J_step.append(evaluate_objective_function(mu, signm))
+            J_step.append(evaluate_objective_function(mu, sigma))
 
         J.append(J_step)
 
-        # unsure right now, think we need many gradient estimates???
-        grad_est = estimate_gradient()
-        mu = step_and_optimize_mu(mu)
+        theta = sample_gaussian_policy(mu, sigma)
+        grad_est = estimate_gradient(mu, sigma, theta)
+        mu, gradient_variance = step_and_optimize_mu(mu, gradient_variance, grad_est)
 
     # We plot our graph of the objective function over time
-    plt.plot(J)
+    # plt.plot(J)
 
     # At the very end have optimized mu, sigma
     return mu, sigma
+
+
+if __name__ == "__main__":
+    algorithm()
