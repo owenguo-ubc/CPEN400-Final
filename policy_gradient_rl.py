@@ -48,13 +48,19 @@ def get_uniform_k():
     pass
 
 
-# This function will run the ansatz circuit and then project the result onto |k>
-# This is gonna the QNode then do the state projection
-def evaluate_fidelity(k, theta):
-    # Call QNode from policy_gradient_vqa.py
-    # Then do classical path
-    pass
+def evaluate_fidelity(thetas: List[float], k):
+    """
+    This function will run the ansatz circuit and then project the result onto |k>
+    This is gonna the QNode then do the state projection
 
+    :param thetas: List of thetas
+    :param k: Quantum state which is a random sampled state
+    """
+    # Call QNode from policy_gradient_vqa.py
+    qnode = build_vqa_qnode(thetas)
+    state = qnode(k, thetas)
+    # Project the resulting state from calling qnode onto |k>
+    projection_norm_squared(state, k)
 
 # Implement Equation (3)
 def evaluate_objective_function(mu, sigm) -> float:
@@ -72,7 +78,7 @@ def evaluate_objective_function(mu, sigm) -> float:
             theta = sample_gaussian_policy(mu, sigm)
             prob = lookup_gaussian(mu, sigm, theta)
             # Output of the ansatz circuit is the second term is Equation (3)
-            fid = evaluate_fidelity(k, theta)
+            fid = evaluate_fidelity(theta, k)
             inner_term = prob * fid
         J += p_k * inner_term
     return J
