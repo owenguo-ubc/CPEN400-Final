@@ -5,17 +5,18 @@ import numpy as np
 import math
 from policy_gradient_vqa import *
 from scipy.stats import multivariate_normal
+from scipy.stats import unitary_group
 
 
 # Sample policy and return list of thetas
 def sample_gaussian_policy(mu: List[float], sigm) -> List[float]:
-    return np.random.normal(mu, sigm)
+    return np.random.multivariate_normal(mu, sigm)
 
 
 # Given x (which is vector) what is the probability of that occuring in the gaussian function given mu and sigma
 def lookup_gaussian(mu: List[float], sigma, x) -> float:
     # TODO Akhil: Equation (2)
-    return multivariate_normal(mean=mu, cov=sigma).pdf(x)
+    return multivariate_normal.pdf(x, mean=mu, cov=sigma)
 
 
 def get_covariance(timestep: int) -> np.array:
@@ -32,8 +33,7 @@ def get_covariance(timestep: int) -> np.array:
     # Dynamically create sigma_f which is diag(10^-5) of n by n where n is number of thetas
     sigma_f = np.diag([10**-5 for _ in range(N_VAL)])
     # Compute the covariance to return
-    covariance = (((1 - timestep) / T_VAL) * sigma_i) + (timestep / (T_VAL * sigma_f))
-    covariance[np.isnan(covariance)] = 0
+    covariance = (((1 - timestep) / T_VAL) * sigma_i) + ((timestep / T_VAL) * sigma_f)
     return covariance
 
 
@@ -53,7 +53,7 @@ def get_uniform_k():
     return np.random.uniform(low=0, high=1, size=NUM_QUBITS)
 
 
-def evaluate_fidelity(thetas: List[float], k):
+def evaluate_fidelity(unitary, thetas: List[float], k):
     """
     This function will run the ansatz circuit and then project the result onto |k>
     This is gonna the QNode then do the state projection
@@ -62,14 +62,14 @@ def evaluate_fidelity(thetas: List[float], k):
     :param k: Quantum state which is a random sampled state
     """
     # Call QNode from policy_gradient_vqa.py
-    qnode = build_vqa_qnode(thetas)
-    state = qnode(k, thetas)
+    qnode = build_vqa_qnode(unitary)
+    state = qnode(k, thetas, NUM_LAYERS)
     # Project the resulting state from calling qnode onto |k>
     return projection_norm_squared(state, k)
 
 
 # Implement Equation (3)
-def evaluate_objective_function(mu, sigm) -> float:
+def evaluate_objective_function(unitary, mu, sigm) -> float:
     J = 0.0
     # Outer sigma
     for _ in range(M_VAL):
@@ -84,13 +84,13 @@ def evaluate_objective_function(mu, sigm) -> float:
             theta = sample_gaussian_policy(mu, sigm)
             prob = lookup_gaussian(mu, sigm, theta)
             # Output of the ansatz circuit is the second term is Equation (3)
-            fid = evaluate_fidelity(theta, k)
+            fid = evaluate_fidelity(unitary, theta, k)
             inner_term = prob * fid
         J += p_k * inner_term
     return J
 
 
-def estimate_gradient(mu, sigma, theta):
+def estimate_gradient(unitary, mu, sigma, theta):
     """"
     Implements equation 4 found on page 3
     """
@@ -108,7 +108,7 @@ def estimate_gradient(mu, sigma, theta):
             theta = sample_gaussian_policy(mu, sigma)
             prob = lookup_gaussian(mu, sigma, theta)
             # Output of the ansatz circuit is the second term is Equation (3)
-            fid = evaluate_fidelity(theta, k)
+            fid = evaluate_fidelity(unitary, theta, k)
 
             log_mu_gradient_estimate = log_likelyhood_gradient_mu(mu, sigma, theta)
 
@@ -135,8 +135,8 @@ def step_and_optimize_mu(old_mu, previous_variance, mu_gradient) -> tuple[List[f
 
 
 # This is the high level algorithm which does policy gradient approach
-def algorithm():
-    mu = [0 for _ in range(N_VAL)]  # TODO: choose starting mu
+def algorithm(unitary):
+    mu = np.zeros(N_VAL)  # TODO: choose starting mu
     sigma = get_covariance(0)
     # initial variance ???
     gradient_variance = 0
@@ -146,7 +146,7 @@ def algorithm():
 
         J_step = []
         for _ in range(GRAPH_NUM):
-            J_step.append(evaluate_objective_function(mu, sigma))
+            J_step.append(evaluate_objective_function(unitary, mu, sigma))
 
         J.append(J_step)
 
@@ -162,4 +162,5 @@ def algorithm():
 
 
 if __name__ == "__main__":
-    algorithm()
+    unitary = unitary_group.rvs(4)
+    algorithm(unitary)
