@@ -15,7 +15,7 @@ N_VAL = 2 * NUM_QUBITS * NUM_LAYERS
 # From page 10
 M_VAL = max(15 * NUM_QUBITS, NUM_QUBITS**2)
 
-MAX_ITER_REINFORCE = 3
+MAX_ITER_REINFORCE = 3000
 
 # Number of times to evaluate J at a certain step for graphing purposes
 GRAPH_NUM = 10
