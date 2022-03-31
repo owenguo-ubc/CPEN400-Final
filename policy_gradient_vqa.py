@@ -14,7 +14,7 @@ def create_anzatz_circuit(n_wires, thetas, n_layers=1):
     gates match. The third columb is just offset 1 down.
 
           |          Layer 1         |     .........    |      Layer N
-            
+
           ┌──┐   ┌──┐
           │θ1├───┤  ├─────────────
           └──┘   │  │
@@ -76,6 +76,7 @@ def create_anzatz_circuit(n_wires, thetas, n_layers=1):
 
     return θ_counter
 
+
 def apply_rzz(theta, wires):
     """Double Qubit gates
 
@@ -87,10 +88,6 @@ def apply_rzz(theta, wires):
     qml.RZ(theta, wires=[wires[1]])
     qml.CNOT(wires=[wires[0], wires[1]])
 
-def _policy_gradient_descent(vqa_qnode) -> List[float]:
-    """
-    TODO:
-    """
 
 def build_vqa_qnode(unitary) -> qml.QNode:
     num_qbits = int(np.log2(unitary.shape[0]))
@@ -112,6 +109,7 @@ def build_vqa_qnode(unitary) -> qml.QNode:
 
     return qnode
 
+
 def projection_norm_squared(a, b):
     """
     Takes two state vectors a, and b (in the format returned from qml.state)
@@ -123,11 +121,6 @@ def projection_norm_squared(a, b):
     proj = np.dot(a, b)
     # return |<a|b>|^2
     return proj * np.conj(proj)
-    
-def pg_vqa_compile(unitary, layers, num_layers) -> List[float]:
-    vqa_qnode = build_vqa_qnode(unitary)
-    thetas = _policy_gradient_descent(vqa_qnode)
-    return thetas
 
 
 if __name__ == "__main__":

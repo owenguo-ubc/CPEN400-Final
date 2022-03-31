@@ -1,11 +1,8 @@
 from typing import List
 from constants import *
 import numpy as np
-# from matplotlib import plot as plt
-import math
 from policy_gradient_vqa import *
 from scipy.stats import multivariate_normal
-from scipy.stats import unitary_group
 
 
 # Sample policy and return list of thetas
@@ -43,13 +40,7 @@ def get_uniform_k():
     :param num_qubits: How many qubits to create a random state for
 
     """
-    # random_state = [
-    #     np.random.random(1) + np.random.random(1) * 1j for _ in range(NUM_QUBITS)
-    # ]
-
-    # state = Z / np.linalg.norm(random_state)
-
-    # TODO: Actual implementation please
+    # TODO: needs actual implementation
     return np.random.uniform(low=0, high=1, size=NUM_QUBITS)
 
 
@@ -65,7 +56,7 @@ def evaluate_fidelity(unitary, thetas: List[float], k):
     qnode = build_vqa_qnode(unitary)
     state = qnode(k, thetas, NUM_LAYERS)
     # Project the resulting state from calling qnode onto |k>
-    return projection_norm_squared(state, k)
+    return projection_norm_squared(state, k).real
 
 
 # Implement Equation (3)
@@ -76,50 +67,38 @@ def evaluate_objective_function(unitary, mu, sigm) -> float:
         # k is a quantum state which is a random sampled state
         k = get_uniform_k()
         p_k = 1 / M_VAL
-        # Inner sigma
-        # "Monte Carlo part"
-        inner_term = 0
-        for _ in range(NUM_THETA_ROLLOUTS):
-            # First term of Equation 2(0)
-            theta = sample_gaussian_policy(mu, sigm)
-            prob = lookup_gaussian(mu, sigm, theta)
-            # Output of the ansatz circuit is the second term is Equation (3)
-            fid = evaluate_fidelity(unitary, theta, k)
-            inner_term = prob * fid
-        J += p_k * inner_term
+
+        theta = sample_gaussian_policy(mu, sigm)
+        fid = evaluate_fidelity(unitary, theta, k)
+
+        J += (p_k * fid)
+
     return J
 
 
-def estimate_gradient(unitary, mu, sigma, theta):
+def estimate_gradient(unitary, mu, sigma):
     """"
     Implements equation 4 found on page 3
     """
-    J_delta = []
+    J_delta = np.zeros(N_VAL)
 
     for _ in range(M_VAL):
         # k is a quantum state which is a random sampled state
         k = get_uniform_k()
         p_k = 1 / M_VAL
-        # Inner sigma
-        # "Monte Carlo part"
-        inner_term = 0
-        for _ in range(NUM_THETA_ROLLOUTS):
-            # First term of Equation 2(0)
-            theta = sample_gaussian_policy(mu, sigma)
-            prob = lookup_gaussian(mu, sigma, theta)
-            # Output of the ansatz circuit is the second term is Equation (3)
-            fid = evaluate_fidelity(unitary, theta, k)
 
-            log_mu_gradient_estimate = log_likelyhood_gradient_mu(mu, sigma, theta)
+        theta = sample_gaussian_policy(mu, sigma)
+        # Output of the ansatz circuit is the second term is Equation (3)
+        fid = evaluate_fidelity(unitary, theta, k)
+        log_mu_gradient_estimate = log_likelyhood_gradient_mu(mu, sigma, theta)
 
-            inner_term = log_mu_gradient_estimate * prob * fid
-        J_delta += p_k * inner_term
+        J_delta += (p_k * fid * log_mu_gradient_estimate)
 
     return J_delta
 
 
 def log_likelyhood_gradient_mu(mu, sigma, thetas):
-    return (np.linalg.inv(sigma) * (thetas - mu))
+    return np.linalg.inv(sigma).dot((thetas - mu))
 
 
 def gradient_variance(previous_variance, current_gradient):
@@ -135,14 +114,14 @@ def step_and_optimize_mu(old_mu, previous_variance, mu_gradient) -> tuple[List[f
 
 
 # This is the high level algorithm which does policy gradient approach
-def algorithm(unitary):
+def pgrl_algorithm(unitary):
     mu = np.zeros(N_VAL)  # TODO: choose starting mu
     sigma = get_covariance(0)
     # initial variance ???
     gradient_variance = 0
 
     J = []
-    for _ in range(MAX_ITER_REINFORCE):
+    for i in range(1, MAX_ITER_REINFORCE):
 
         J_step = []
         for _ in range(GRAPH_NUM):
@@ -150,17 +129,10 @@ def algorithm(unitary):
 
         J.append(J_step)
 
-        theta = sample_gaussian_policy(mu, sigma)
-        grad_est = estimate_gradient(mu, sigma, theta)
+        grad_est = estimate_gradient(unitary, mu, sigma)
         mu, gradient_variance = step_and_optimize_mu(mu, gradient_variance, grad_est)
+        sigma = get_covariance(i)
 
-    # We plot our graph of the objective function over time
-    # plt.plot(J)
 
     # At the very end have optimized mu, sigma
-    return mu, sigma
-
-
-if __name__ == "__main__":
-    unitary = unitary_group.rvs(4)
-    algorithm(unitary)
+    return mu, sigma, J
