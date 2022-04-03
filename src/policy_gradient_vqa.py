@@ -67,11 +67,11 @@ def _create_anzatz_circuit(n_wires, thetas, n_layers=1):
 
         # Look at ever other wire
         for w in range(n_wires)[:-1:2]:
-            _apply_rzz(thetas[θ_counter + int(w/2)], [w, w+1])
+            _apply_rzz(thetas[θ_counter + int(w / 2)], [w, w + 1])
 
         # Look at ever other wire, offset by 1, skipping the last one
         for w in range(n_wires)[1:-1:2]:
-            _apply_rzz(thetas[θ_counter + int(w/2)], [w, w+1])
+            _apply_rzz(thetas[θ_counter + int(w / 2)], [w, w + 1])
 
     return θ_counter
 
@@ -131,8 +131,12 @@ if __name__ == "__main__":
         help="How many layers should be in the anzatz",
     )
     args = parser.parse_args()
-    size = 2**(int(args.num_qubits))
+    size = 2 ** (int(args.num_qubits))
     layers = int(args.num_layers)
     U = np.identity(size)
 
-    print(qml.draw(build_vqa_qnode(U))(range(size), range(layers * 2 * (int(args.num_qubits))), n_layers=layers))
+    print(
+        qml.draw(build_vqa_qnode(U))(
+            range(size), range(layers * 2 * (int(args.num_qubits))), n_layers=layers
+        )
+    )

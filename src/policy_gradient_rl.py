@@ -26,9 +26,9 @@ def _get_covariance(n_val: int, timestep: int) -> np.array:
     :param dimension: The dimension of the diagonal matrices
     """
     # Dynamically create sigma_i which is diag(10^-2) of n by n where n is number of thetas
-    sigma_i = np.diag([10**-2 for _ in range(n_val)])
+    sigma_i = np.diag([10 ** -2 for _ in range(n_val)])
     # Dynamically create sigma_f which is diag(10^-5) of n by n where n is number of thetas
-    sigma_f = np.diag([10**-5 for _ in range(n_val)])
+    sigma_f = np.diag([10 ** -5 for _ in range(n_val)])
     # Compute the covariance to return
     covariance = (((1 - timestep) / T_VAL) * sigma_i) + ((timestep / T_VAL) * sigma_f)
     return covariance
@@ -41,8 +41,8 @@ def _get_uniform_k(num_qubits):
 
     """
     # TODO: needs actual implementation
-    state = np.zeros((2**num_qubits))
-    state[np.random.randint((2**num_qubits) - 1)] = 1
+    state = np.zeros((2 ** num_qubits))
+    state[np.random.randint((2 ** num_qubits) - 1)] = 1
     return state
 
 
@@ -73,13 +73,13 @@ def _evaluate_objective_function(m_val, num_qubits, unitary, mu, sigm) -> float:
         theta = _sample_gaussian_policy(mu, sigm)
         fid = _evaluate_fidelity(unitary, theta, k)
 
-        J += (p_k * fid)
+        J += p_k * fid
 
     return J
 
 
 def _estimate_gradient(n_val, m_val, num_qubits, unitary, mu, sigma):
-    """"
+    """ "
     Implements equation 4 found on page 3
     """
     J_delta = np.zeros(n_val)
@@ -94,7 +94,7 @@ def _estimate_gradient(n_val, m_val, num_qubits, unitary, mu, sigma):
         fid = _evaluate_fidelity(unitary, theta, k)
         log_mu_gradient_estimate = _log_likelyhood_gradient_mu(mu, sigma, theta)
 
-        J_delta += (p_k * fid * log_mu_gradient_estimate)
+        J_delta += p_k * fid * log_mu_gradient_estimate
 
     return J_delta
 
@@ -104,14 +104,14 @@ def _log_likelyhood_gradient_mu(mu, sigma, thetas):
 
 
 def _gradient_variance(previous_variance, current_gradient):
-    return ( (GAMMA * previous_variance) + (1 - GAMMA) * (np.dot(current_gradient, current_gradient)) )
+    return (GAMMA * previous_variance) + (1 - GAMMA) * (np.dot(current_gradient, current_gradient))
 
 
 # This would be doing one step of optimizing mu after gradient estimation
 # Needs to implement Equations (12) and (13)
 def _step_and_optimize_mu(old_mu, previous_variance, mu_gradient) -> tuple[List[float], float]:
     new_variance = _gradient_variance(previous_variance, mu_gradient)
-    new_mu = old_mu + ( ETA * (mu_gradient / np.sqrt((new_variance + EPSILON)) ) )
+    new_mu = old_mu + (ETA * (mu_gradient / np.sqrt((new_variance + EPSILON))))
     return (new_mu, new_variance)
 
 
@@ -122,7 +122,7 @@ def pgrl_algorithm(num_qubits, unitary):
     N_VAL = (2 * num_qubits - 1) * NUM_LAYERS
 
     # From page 10
-    M_VAL = max(15 * num_qubits, num_qubits**2)
+    M_VAL = max(15 * num_qubits, num_qubits ** 2)
 
     mu = np.zeros(N_VAL)
     sigma = _get_covariance(N_VAL, 0)
@@ -142,7 +142,6 @@ def pgrl_algorithm(num_qubits, unitary):
         grad_est = _estimate_gradient(N_VAL, M_VAL, num_qubits, unitary, mu, sigma)
         mu, gradient_variance = _step_and_optimize_mu(mu, gradient_variance, grad_est)
         sigma = _get_covariance(N_VAL, i)
-
 
     # At the very end have optimized mu, sigma
     return mu, sigma, J
