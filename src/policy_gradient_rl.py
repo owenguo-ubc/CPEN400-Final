@@ -37,16 +37,29 @@ def _get_covariance(n_val: int, timestep: int) -> np.array:
     return covariance
 
 
-def _get_uniform_k(num_qubits):
-    """Placeholder random uniform sample
+def _get_uniform_k(num_qubits, seed):
+    """Generator a random state vector.
+    
+    Largely derived from the Qiskit implementation of random_statevector(dims, seed=None)
 
-    :param num_qubits: How many qubits to create a random state for
+    The statevector is sampled from the uniform (Haar) measure.
 
+    Args:
+        num_qubits: the number of qubits to generate.
+        seed: An np.random.Generator (eg. np.random.default_rng()) 
+
+    Returns:
+        A random state sampled from the Haar measure
     """
-    # TODO: needs actual implementation
-    state = np.zeros((2 ** num_qubits))
-    state[np.random.randint((2 ** num_qubits) - 1)] = 1
-    return state
+    rng = seed
+
+    # Random array over interval (0, 1]
+    x = rng.random(num_qubits)
+    x += x == 0
+    x = -np.log(x)
+    sumx = sum(x)
+    phases = rng.random(num_qubits) * 2.0 * np.pi
+    return np.sqrt(x / sumx) * np.exp(1j * phases)
 
 
 def _evaluate_fidelity(unitary, thetas: List[float], k):
