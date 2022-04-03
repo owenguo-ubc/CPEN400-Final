@@ -4,7 +4,7 @@ import argparse
 from typing import List
 
 
-def create_anzatz_circuit(n_wires, thetas, n_layers=1):
+def _create_anzatz_circuit(n_wires, thetas, n_layers=1):
     """Create layers of single qubit aqnd two qubit rotations that
     create maximal overlap.
 
@@ -14,7 +14,7 @@ def create_anzatz_circuit(n_wires, thetas, n_layers=1):
     gates match. The third columb is just offset 1 down.
 
           |          Layer 1         |     .........    |      Layer N
-            
+
           ┌──┐   ┌──┐
           │θ1├───┤  ├─────────────
           └──┘   │  │
@@ -67,16 +67,16 @@ def create_anzatz_circuit(n_wires, thetas, n_layers=1):
 
         # Look at ever other wire
         for w in range(n_wires)[:-1:2]:
-            apply_rzz(thetas[θ_counter + int(w/2)], [w, w+1])
+            _apply_rzz(thetas[θ_counter + int(w / 2)], [w, w + 1])
 
         # Look at ever other wire, offset by 1, skipping the last one
         for w in range(n_wires)[1:-1:2]:
-            print(w, w+1)
-            apply_rzz(thetas[θ_counter + int(w/2)], [w, w+1])
+            _apply_rzz(thetas[θ_counter + int(w / 2)], [w, w + 1])
 
     return θ_counter
 
-def apply_rzz(theta, wires):
+
+def _apply_rzz(theta, wires):
     """Double Qubit gates
 
     :param theta: The 2-Qubit theta
@@ -87,10 +87,6 @@ def apply_rzz(theta, wires):
     qml.RZ(theta, wires=[wires[1]])
     qml.CNOT(wires=[wires[0], wires[1]])
 
-def _policy_gradient_descent(vqa_qnode) -> List[float]:
-    """
-    TODO:
-    """
 
 def build_vqa_qnode(unitary) -> qml.QNode:
     num_qbits = int(np.log2(unitary.shape[0]))
@@ -100,17 +96,15 @@ def build_vqa_qnode(unitary) -> qml.QNode:
     @qml.qnode(dev)
     def qnode(k, thetas, n_layers):
         # Assuming k is sampled from the computation basis
-        for index, b in enumerate(k):
-            if b == "1":
-                qml.PauliX(wires=index)
+        qml.QubitStateVector(k, wires=range(num_qbits))
 
         qml.QubitUnitary(unitary, wires=range(num_qbits))
-        create_anzatz_circuit(num_qbits, thetas, n_layers)
+        _create_anzatz_circuit(num_qbits, thetas, n_layers)
 
-        # TODO: return current state |ψ⟩ projected onto |k〉
         return qml.state()
 
     return qnode
+
 
 def projection_norm_squared(a, b):
     """
@@ -122,12 +116,7 @@ def projection_norm_squared(a, b):
     # Calculate <a|b>
     proj = np.dot(a, b)
     # return |<a|b>|^2
-    return proj * np.conj(proj)
-    
-def pg_vqa_compile(unitary, layers, num_layers) -> List[float]:
-    vqa_qnode = build_vqa_qnode(unitary)
-    thetas = _policy_gradient_descent(vqa_qnode)
-    return thetas
+    return (proj * np.conj(proj)).real
 
 
 if __name__ == "__main__":
@@ -141,8 +130,12 @@ if __name__ == "__main__":
         help="How many layers should be in the anzatz",
     )
     args = parser.parse_args()
-    size = 2**(int(args.num_qubits))
+    size = 2 ** (int(args.num_qubits))
     layers = int(args.num_layers)
     U = np.identity(size)
 
-    print(qml.draw(build_vqa_qnode(U))(range(size), range(layers * 2 * (int(args.num_qubits))), n_layers=layers))
+    print(
+        qml.draw(build_vqa_qnode(U))(
+            range(size), range(layers * 2 * (int(args.num_qubits))), n_layers=layers
+        )
+    )
