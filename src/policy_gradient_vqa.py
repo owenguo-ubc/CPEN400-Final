@@ -4,7 +4,7 @@ import argparse
 from typing import List
 
 
-def create_anzatz_circuit(n_wires, thetas, n_layers=1):
+def _create_anzatz_circuit(n_wires, thetas, n_layers=1):
     """Create layers of single qubit aqnd two qubit rotations that
     create maximal overlap.
 
@@ -67,17 +67,16 @@ def create_anzatz_circuit(n_wires, thetas, n_layers=1):
 
         # Look at ever other wire
         for w in range(n_wires)[:-1:2]:
-            apply_rzz(thetas[θ_counter + int(w/2)], [w, w+1])
+            _apply_rzz(thetas[θ_counter + int(w/2)], [w, w+1])
 
         # Look at ever other wire, offset by 1, skipping the last one
         for w in range(n_wires)[1:-1:2]:
-            print(w, w+1)
-            apply_rzz(thetas[θ_counter + int(w/2)], [w, w+1])
+            _apply_rzz(thetas[θ_counter + int(w/2)], [w, w+1])
 
     return θ_counter
 
 
-def apply_rzz(theta, wires):
+def _apply_rzz(theta, wires):
     """Double Qubit gates
 
     :param theta: The 2-Qubit theta
@@ -97,12 +96,10 @@ def build_vqa_qnode(unitary) -> qml.QNode:
     @qml.qnode(dev)
     def qnode(k, thetas, n_layers):
         # Assuming k is sampled from the computation basis
-        for index, b in enumerate(k):
-            if b == "1":
-                qml.PauliX(wires=index)
+        qml.QubitStateVector(k, wires=range(num_qbits))
 
         qml.QubitUnitary(unitary, wires=range(num_qbits))
-        create_anzatz_circuit(num_qbits, thetas, n_layers)
+        _create_anzatz_circuit(num_qbits, thetas, n_layers)
 
         # TODO: return current state |ψ⟩ projected onto |k〉
         return qml.state()
@@ -120,7 +117,7 @@ def projection_norm_squared(a, b):
     # Calculate <a|b>
     proj = np.dot(a, b)
     # return |<a|b>|^2
-    return proj * np.conj(proj)
+    return (proj * np.conj(proj)).real
 
 
 if __name__ == "__main__":
