@@ -5,14 +5,17 @@ from .policy_gradient_vqa import *
 from scipy.stats import multivariate_normal
 
 
-# Sample policy and return list of thetas
 def _sample_gaussian_policy(mu: List[float], sigm) -> List[float]:
+    """
+    Sample policy and return list of thetas
+    """
     return np.random.multivariate_normal(mu, sigm)
 
 
-# Given x (which is vector) what is the probability of that occuring in the gaussian function given mu and sigma
 def _lookup_gaussian(mu: List[float], sigma, x) -> float:
-    # TODO Akhil: Equation (2)
+    """
+    Given x (which is vector) what is the probability of that occuring in the gaussian function given mu and sigma
+    """
     return multivariate_normal.pdf(x, mean=mu, cov=sigma)
 
 
@@ -61,8 +64,10 @@ def _evaluate_fidelity(unitary, thetas: List[float], k):
     return projection_norm_squared(state, k)
 
 
-# Implement Equation (3)
 def _evaluate_objective_function(m_val, num_qubits, unitary, mu, sigm) -> float:
+    """
+    Implements equation 3
+    """
     J = 0.0
     # Outer sigma
     for _ in range(m_val):
@@ -79,7 +84,7 @@ def _evaluate_objective_function(m_val, num_qubits, unitary, mu, sigm) -> float:
 
 
 def _estimate_gradient(n_val, m_val, num_qubits, unitary, mu, sigma):
-    """ "
+    """
     Implements equation 4 found on page 3
     """
     J_delta = np.zeros(n_val)
@@ -109,16 +114,20 @@ def _gradient_variance(previous_variance, current_gradient):
     )
 
 
-# This would be doing one step of optimizing mu after gradient estimation
-# Needs to implement Equations (12) and (13)
 def _step_and_optimize_mu(old_mu, previous_variance, mu_gradient) -> tuple[List[float], float]:
+    """
+    This would be doing one step of optimizing mu after gradient estimation
+    Implements equations (12) and (13)
+    """
     new_variance = _gradient_variance(previous_variance, mu_gradient)
     new_mu = old_mu + (ETA * (mu_gradient / np.sqrt((new_variance + EPSILON))))
     return (new_mu, new_variance)
 
 
-# This is the high level algorithm which does policy gradient approach
 def pgrl_algorithm(num_qubits, unitary):
+    """
+    This is the high level algorithm which does policy gradient approach
+    """
 
     # Define N as larger for more precision
     N_VAL = (2 * num_qubits - 1) * NUM_LAYERS

@@ -122,12 +122,10 @@ def projection_norm_squared(a, b):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Quiz3")
     parser.add_argument(
-        "--num_qubits",
-        help="How many qubits should we create the test unitary for",
+        "--num_qubits", help="How many qubits should we create the test unitary for",
     )
     parser.add_argument(
-        "--num_layers",
-        help="How many layers should be in the anzatz",
+        "--num_layers", help="How many layers should be in the anzatz",
     )
     args = parser.parse_args()
     size = 2 ** (int(args.num_qubits))

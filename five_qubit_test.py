@@ -25,5 +25,5 @@ for idx, iteration in enumerate(J):
 
 plt.plot(plot_x, plot_avg)
 plt.fill_between(plot_x, plot_high, plot_low, color="#97b5d4")
-plt.savefig(f'five_qubit_result.png')
+plt.savefig(f"five_qubit_result.png")
 plt.clf()
