@@ -3,7 +3,7 @@ from src.policy_gradient_rl import pgrl_algorithm
 import matplotlib.pyplot as plt
 
 # Test constants
-NUM_QUBITS = 4
+NUM_QUBITS = 5
 
 # Choose a random unitary to approximate
 unitary = unitary_group.rvs(2 ** NUM_QUBITS)

@@ -101,7 +101,6 @@ def build_vqa_qnode(unitary) -> qml.QNode:
         qml.QubitUnitary(unitary, wires=range(num_qbits))
         _create_anzatz_circuit(num_qbits, thetas, n_layers)
 
-        # TODO: return current state |ψ⟩ projected onto |k〉
         return qml.state()
 
     return qnode

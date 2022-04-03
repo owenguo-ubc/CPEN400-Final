@@ -30,7 +30,7 @@ def _get_covariance(n_val: int, timestep: int) -> np.array:
     # Dynamically create sigma_f which is diag(10^-5) of n by n where n is number of thetas
     sigma_f = np.diag([10 ** -5 for _ in range(n_val)])
     # Compute the covariance to return
-    covariance = (((1 - timestep) / T_VAL) * sigma_i) + ((timestep / T_VAL) * sigma_f)
+    covariance = ((1 - (timestep / T_VAL)) * sigma_i) + ((timestep / T_VAL) * sigma_f)
     return covariance
 
 
@@ -104,7 +104,9 @@ def _log_likelyhood_gradient_mu(mu, sigma, thetas):
 
 
 def _gradient_variance(previous_variance, current_gradient):
-    return (GAMMA * previous_variance) + (1 - GAMMA) * (np.dot(current_gradient, current_gradient))
+    return (GAMMA * previous_variance) + (
+        (1 - GAMMA) * (np.dot(current_gradient, current_gradient))
+    )
 
 
 # This would be doing one step of optimizing mu after gradient estimation
