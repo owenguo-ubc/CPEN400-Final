@@ -5,6 +5,7 @@ from .policy_gradient_vqa import *
 from scipy.stats import multivariate_normal
 from multiprocessing import Pool
 
+RAND_SEED = np.random.default_rng()
 
 def _sample_gaussian_policy(mu: List[float], sigm) -> List[float]:
     """
@@ -38,7 +39,7 @@ def _get_covariance(n_val: int, timestep: int) -> np.array:
     return covariance
 
 
-def _get_uniform_k(num_qubits, seed):
+def _get_uniform_k(num_qubits):
     """Generator a random state vector.
     
     Largely derived from the Qiskit implementation of random_statevector(dims, seed=None)
@@ -52,14 +53,14 @@ def _get_uniform_k(num_qubits, seed):
     Returns:
         A random state sampled from the Haar measure
     """
-    rng = seed
-
+    rng = RAND_SEED
+    terms = num_qubits ** 2
     # Random array over interval (0, 1]
-    x = rng.random(num_qubits)
+    x = rng.random(terms)
     x += x == 0
     x = -np.log(x)
     sumx = sum(x)
-    phases = rng.random(num_qubits) * 2.0 * np.pi
+    phases = rng.random(terms) * 2.0 * np.pi
     return np.sqrt(x / sumx) * np.exp(1j * phases)
 
 
