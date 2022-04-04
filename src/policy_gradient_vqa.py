@@ -56,6 +56,7 @@ def _create_anzatz_circuit(n_wires, thetas, n_layers=1):
 
     """
     θ_counter = 0
+    mapping = {}
 
     # TODO should we take in wires?
     for _ in range(n_layers):
@@ -63,15 +64,19 @@ def _create_anzatz_circuit(n_wires, thetas, n_layers=1):
         # Create single qubit column
         for w in range(n_wires):
             qml.RY(thetas[θ_counter + w], wires=[w])
-        θ_counter += n_wires
+            mapping[θ_counter] = thetas[θ_counter]
 
         # Look at ever other wire
         for w in range(n_wires)[:-1:2]:
             _apply_rzz(thetas[θ_counter + int(w / 2)], [w, w + 1])
+            mapping[θ_counter + int(w / 2)] = thetas[θ_counter + int(w / 2)]
+        θ_counter += len(range(n_wires)[:-1:2])
 
         # Look at ever other wire, offset by 1, skipping the last one
         for w in range(n_wires)[1:-1:2]:
             _apply_rzz(thetas[θ_counter + int(w / 2)], [w, w + 1])
+            mapping[θ_counter + int(w / 2)] = thetas[θ_counter + int(w / 2)]
+        θ_counter += len(range(n_wires)[1:-1:2])
 
     return θ_counter
 
@@ -83,9 +88,13 @@ def _apply_rzz(theta, wires):
     :param wires: The wires
 
     """
-    qml.CNOT(wires=[wires[0], wires[1]])
-    qml.RZ(theta, wires=[wires[1]])
-    qml.CNOT(wires=[wires[0], wires[1]])
+    D = [
+        np.exp(-1j / 2 * theta),
+        np.exp(1j / 2 * theta),
+        np.exp(1j / 2 * theta),
+        np.exp(-1j / 2 * theta),
+    ]
+    qml.DiagonalQubitUnitary(D, wires=wires)
 
 
 def build_vqa_qnode(unitary) -> qml.QNode:
@@ -122,10 +131,12 @@ def projection_norm_squared(a, b):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Quiz3")
     parser.add_argument(
-        "--num_qubits", help="How many qubits should we create the test unitary for",
+        "--num_qubits",
+        help="How many qubits should we create the test unitary for",
     )
     parser.add_argument(
-        "--num_layers", help="How many layers should be in the anzatz",
+        "--num_layers",
+        help="How many layers should be in the anzatz",
     )
     args = parser.parse_args()
     size = 2 ** (int(args.num_qubits))

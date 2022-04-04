@@ -3,6 +3,7 @@ from .constants import *
 import numpy as np
 from .policy_gradient_vqa import *
 from scipy.stats import multivariate_normal
+from multiprocessing import Pool
 
 
 def _sample_gaussian_policy(mu: List[float], sigm) -> List[float]:
@@ -127,7 +128,7 @@ def _gradient_variance(previous_variance, current_gradient):
     )
 
 
-def _step_and_optimize_mu(old_mu, previous_variance, mu_gradient) -> tuple[List[float], float]:
+def _step_and_optimize_mu(old_mu, previous_variance, mu_gradient):
     """
     This would be doing one step of optimizing mu after gradient estimation
     Implements equations (12) and (13)
@@ -154,7 +155,8 @@ def pgrl_algorithm(num_qubits, unitary):
     gradient_variance = 0
 
     J = []
-    for i in range(1, MAX_ITER_REINFORCE):
+    mus = []
+    for i in range(1, 10):
         print(f"DEBUG: Iteration: {i}")
 
         J_step = []
@@ -165,7 +167,9 @@ def pgrl_algorithm(num_qubits, unitary):
 
         grad_est = _estimate_gradient(N_VAL, M_VAL, num_qubits, unitary, mu, sigma)
         mu, gradient_variance = _step_and_optimize_mu(mu, gradient_variance, grad_est)
+        print(mu)
+        mus.append(mu)
         sigma = _get_covariance(N_VAL, i)
 
     # At the very end have optimized mu, sigma
-    return mu, sigma, J
+    return mus, sigma, J
