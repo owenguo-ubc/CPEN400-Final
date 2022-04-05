@@ -14,6 +14,16 @@ def _sample_gaussian_policy(mu: List[float], sigm) -> List[float]:
     """
     return np.random.multivariate_normal(mu, sigm)
 
+def _gaussian(mu, sigma, x):
+    # det = np.linalg.det(sigma)
+    det = sigma[0, 0]
+    # print(f"Det: {det}")
+    first_term = np.dot((x - mu), np.linalg.inv(sigma))
+    second_term = np.dot(first_term, np.transpose((x - mu)))
+    exponent_term = (-1 / 2) * second_term
+    res = np.exp(exponent_term) / np.sqrt(((2 * np.pi) ** len(x)) * det)
+    # print(f"Gaussian pdf: {res}")
+    return res
 
 def _lookup_gaussian(mu: List[float], sigma, x) -> float:
     """
@@ -94,8 +104,9 @@ def _evaluate_objective_function(m_val, num_qubits, unitary, mu, sigm) -> float:
         avg = 0
         for _ in range(NUM_ROLLOUT):
             theta = _sample_gaussian_policy(mu, sigm)
+            pdf = _gaussian(mu, sigm, theta)
             fid = _evaluate_fidelity(unitary, theta, k)
-            avg += fid
+            avg += pdf * fid
 
         avg = avg / NUM_ROLLOUT
 
@@ -120,8 +131,9 @@ def _estimate_gradient(n_val, m_val, num_qubits, unitary, mu, sigma):
             theta = _sample_gaussian_policy(mu, sigma)
             # Output of the ansatz circuit is the second term is Equation (3)
             fid = _evaluate_fidelity(unitary, theta, k)
+            pdf = _gaussian(mu, sigma, theta)
             log_mu_gradient_estimate = _log_likelyhood_gradient_mu(mu, sigma, theta)
-            avg += fid * log_mu_gradient_estimate
+            avg += fid * pdf * log_mu_gradient_estimate
 
         avg = avg / NUM_ROLLOUT
 
