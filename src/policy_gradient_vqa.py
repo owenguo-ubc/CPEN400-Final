@@ -56,29 +56,90 @@ def _create_anzatz_circuit(n_wires, thetas, n_layers=1):
 
     """
     θ_counter = 0
-    mapping = {}
 
-    # TODO should we take in wires?
     for _ in range(n_layers):
 
         # Create single qubit column
         for w in range(n_wires):
-            qml.RY(thetas[θ_counter + w], wires=[w])
-            mapping[θ_counter] = thetas[θ_counter]
+            qml.RY(thetas[θ_counter], wires=[w])
+            θ_counter += 1
 
         # Look at ever other wire
         for w in range(n_wires)[:-1:2]:
-            _apply_rzz(thetas[θ_counter + int(w / 2)], [w, w + 1])
-            mapping[θ_counter + int(w / 2)] = thetas[θ_counter + int(w / 2)]
-        θ_counter += len(range(n_wires)[:-1:2])
+            _apply_rzz(thetas[θ_counter], [w, w + 1])
+            θ_counter += 1
 
         # Look at ever other wire, offset by 1, skipping the last one
         for w in range(n_wires)[1:-1:2]:
-            _apply_rzz(thetas[θ_counter + int(w / 2)], [w, w + 1])
-            mapping[θ_counter + int(w / 2)] = thetas[θ_counter + int(w / 2)]
-        θ_counter += len(range(n_wires)[1:-1:2])
+            _apply_rzz(thetas[θ_counter], [w, w + 1])
+            θ_counter += 1
 
     return θ_counter
+
+def _create_random_unitary(n_wires, n_layers=1):
+    """Create a random circuit with the same structure as the anaztaz circuti
+    create maximal overlap.
+
+    There are two main cases to handle:
+
+    1. An odd number of thetas where the second and third column of two qubit
+    gates match. The third columb is just offset 1 down.
+
+          |          Layer 1         |     .........    |      Layer N
+
+          ┌──┐   ┌──┐
+          │θ1├───┤  ├─────────────
+          └──┘   │  │
+                 │θ4│
+          ┌──┐   │  │   ┌──┐
+          │θ2├───┤  ├───┤  ├──────
+          └──┘   └──┘   │  │
+                        │θ5│
+          ┌──┐          │  │
+          │θ3├──────────┤  ├──────
+          └──┘          └──┘
+
+    2. An even number of thetas where the second column has 1 more 2 qubit gate.
+
+
+          |          Layer 1         |     .........    |      Layer N
+
+          ┌──┐   ┌──┐
+          │θ1├───┤  ├────────────────
+          └──┘   │  │
+                 │θ5│
+          ┌──┐   │  │   ┌──┐
+          │θ2├───┤  ├───┤  │
+          └──┘   └──┘   │  │
+                        │θ7│  ...
+          ┌──┐   ┌──┐   │  │
+          │θ3├───┤  ├───┤  │
+          └──┘   │  │   └──┘
+                 │θ6│
+          ┌──┐   │  │
+          │θ4├───┤  ├───────────────
+          └──┘   └──┘
+
+    The thetas are applied in column order.
+
+    :param n_wires: The number of wires to create this anzatz circuit
+    :param thetas: Thetas to construct the anzatz circuit
+    :param n_layers: How many layers we need.
+
+    """
+    for _ in range(n_layers):
+
+        # Create single qubit column
+        for w in range(n_wires):
+            qml.RY(1, wires=[w])
+
+        # Look at ever other wire
+        for w in range(n_wires)[:-1:2]:
+            _apply_rzz(2, [w, w + 1])
+
+        # Look at ever other wire, offset by 1, skipping the last one
+        for w in range(n_wires)[1:-1:2]:
+            _apply_rzz(1.4, [w, w + 1])
 
 
 def _apply_rzz(theta, wires):
@@ -107,7 +168,7 @@ def build_vqa_qnode(unitary) -> qml.QNode:
         # Assuming k is sampled from the computation basis
         qml.MottonenStatePreparation(state_vector=k, wires=range(num_qbits))
 
-        qml.QubitUnitary(unitary, wires=range(num_qbits))
+        _create_random_unitary(num_qbits, n_layers)
         _create_anzatz_circuit(num_qbits, thetas, n_layers)
 
         return qml.state()

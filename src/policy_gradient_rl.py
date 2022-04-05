@@ -156,6 +156,9 @@ def pgrl_algorithm(num_qubits, unitary):
 
     J = []
     mus = []
+    sigmas = []
+    gradient_variances = []
+
     for i in range(1, NUM_ITERATIONS):
         print(f"DEBUG: Iteration: {i}")
 
@@ -166,10 +169,11 @@ def pgrl_algorithm(num_qubits, unitary):
         J.append(J_step)
 
         grad_est = _estimate_gradient(N_VAL, M_VAL, num_qubits, unitary, mu, sigma)
+        gradient_estimation.append(grad_est)
         mu, gradient_variance = _step_and_optimize_mu(mu, gradient_variance, grad_est)
-        print(mu)
         mus.append(mu)
         sigma = _get_covariance(N_VAL, i)
+        gradient_variances.append(gradient_variance)
 
     # At the very end have optimized mu, sigma
-    return mus, sigma, J
+    return mus, sigmas, J, gradient_variances, gradient_estimation
