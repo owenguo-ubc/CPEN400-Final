@@ -105,7 +105,7 @@ def build_vqa_qnode(unitary) -> qml.QNode:
     @qml.qnode(dev)
     def qnode(k, thetas, n_layers):
         # Assuming k is sampled from the computation basis
-        qml.QubitStateVector(k, wires=range(num_qbits))
+        qml.MottonenStatePreparation(state_vector=k, wires=range(num_qbits))
 
         qml.QubitUnitary(unitary, wires=range(num_qbits))
         _create_anzatz_circuit(num_qbits, thetas, n_layers)
