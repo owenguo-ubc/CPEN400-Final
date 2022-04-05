@@ -158,6 +158,7 @@ def pgrl_algorithm(num_qubits, unitary):
     mus = []
     sigmas = []
     gradient_variances = []
+    gradient_estimation = []
 
     for i in range(1, NUM_ITERATIONS):
         print(f"DEBUG: Iteration: {i}")

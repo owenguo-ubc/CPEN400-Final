@@ -9,7 +9,7 @@ from src.policy_gradient_rl import _get_uniform_k
 import numpy as np
 
 # Test constants
-NUM_QUBITS = 5
+NUM_QUBITS = 2
 
 # Choose a random unitary to approximate
 unitary = unitary_group.rvs(2 ** NUM_QUBITS)
