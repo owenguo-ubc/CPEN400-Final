@@ -6,6 +6,7 @@ from scipy.stats import multivariate_normal
 from multiprocessing import Pool
 
 RAND_SEED = np.random.default_rng()
+NUM_ROLLOUT = 20
 
 def _sample_gaussian_policy(mu: List[float], sigm) -> List[float]:
     """
@@ -90,10 +91,15 @@ def _evaluate_objective_function(m_val, num_qubits, unitary, mu, sigm) -> float:
         k = _get_uniform_k(num_qubits)
         p_k = 1 / m_val
 
-        theta = _sample_gaussian_policy(mu, sigm)
-        fid = _evaluate_fidelity(unitary, theta, k)
+        avg = 0
+        for _ in range(NUM_ROLLOUT):
+            theta = _sample_gaussian_policy(mu, sigm)
+            fid = _evaluate_fidelity(unitary, theta, k)
+            avg += fid
 
-        J += p_k * fid
+        avg = avg / NUM_ROLLOUT
+
+        J += p_k * avg
 
     return J
 
@@ -109,12 +115,17 @@ def _estimate_gradient(n_val, m_val, num_qubits, unitary, mu, sigma):
         k = _get_uniform_k(num_qubits)
         p_k = 1 / m_val
 
-        theta = _sample_gaussian_policy(mu, sigma)
-        # Output of the ansatz circuit is the second term is Equation (3)
-        fid = _evaluate_fidelity(unitary, theta, k)
-        log_mu_gradient_estimate = _log_likelyhood_gradient_mu(mu, sigma, theta)
+        avg = 0
+        for _ in range(NUM_ROLLOUT):
+            theta = _sample_gaussian_policy(mu, sigma)
+            # Output of the ansatz circuit is the second term is Equation (3)
+            fid = _evaluate_fidelity(unitary, theta, k)
+            log_mu_gradient_estimate = _log_likelyhood_gradient_mu(mu, sigma, theta)
+            avg += fid * log_mu_gradient_estimate
 
-        J_delta += p_k * fid * log_mu_gradient_estimate
+        avg = avg / NUM_ROLLOUT
+
+        J_delta += p_k * avg
 
     return J_delta
 

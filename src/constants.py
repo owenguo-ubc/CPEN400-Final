@@ -2,9 +2,9 @@
 #                              CONSTANTS                              #
 #######################################################################
 
-NUM_LAYERS = 4
+NUM_LAYERS = 5
 
-NUM_ITERATIONS = 50
+NUM_ITERATIONS = 10
 
 MAX_ITER_REINFORCE = 3000
 
