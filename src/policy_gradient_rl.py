@@ -41,20 +41,20 @@ def _get_covariance(n_val: int, timestep: int) -> np.array:
 
 def _get_uniform_k(num_qubits):
     """Generator a random state vector.
-    
+
     Largely derived from the Qiskit implementation of random_statevector(dims, seed=None)
 
     The statevector is sampled from the uniform (Haar) measure.
 
     Args:
         num_qubits: the number of qubits to generate.
-        seed: An np.random.Generator (eg. np.random.default_rng()) 
+        seed: An np.random.Generator (eg. np.random.default_rng())
 
     Returns:
         A random state sampled from the Haar measure
     """
     rng = RAND_SEED
-    terms = num_qubits ** 2
+    terms = 2 ** num_qubits
     # Random array over interval (0, 1]
     x = rng.random(terms)
     x += x == 0
@@ -125,7 +125,7 @@ def _log_likelyhood_gradient_mu(mu, sigma, thetas):
 
 def _gradient_variance(previous_variance, current_gradient):
     return (GAMMA * previous_variance) + (
-        (1 - GAMMA) * (np.dot(current_gradient, current_gradient))
+        (1 - GAMMA) * (np.square(current_gradient))
     )
 
 
@@ -152,12 +152,11 @@ def pgrl_algorithm(num_qubits, unitary):
 
     mu = np.zeros(N_VAL)
     sigma = _get_covariance(N_VAL, 0)
-    # TODO: initial variance 0 ok?
-    gradient_variance = 0
+    gradient_variance = np.zeros(N_VAL)
 
     J = []
     mus = []
-    for i in range(1, 10):
+    for i in range(1, NUM_ITERATIONS):
         print(f"DEBUG: Iteration: {i}")
 
         J_step = []
