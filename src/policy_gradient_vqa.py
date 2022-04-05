@@ -56,30 +56,25 @@ def _create_anzatz_circuit(n_wires, thetas, n_layers=1):
 
     """
     θ_counter = 0
-    mapping = {}
 
-    # TODO should we take in wires?
     for _ in range(n_layers):
 
         # Create single qubit column
         for w in range(n_wires):
-            qml.RY(thetas[θ_counter + w], wires=[w])
-            mapping[θ_counter] = thetas[θ_counter]
+            qml.RY(thetas[θ_counter], wires=[w])
+            θ_counter += 1
 
         # Look at ever other wire
         for w in range(n_wires)[:-1:2]:
-            _apply_rzz(thetas[θ_counter + int(w / 2)], [w, w + 1])
-            mapping[θ_counter + int(w / 2)] = thetas[θ_counter + int(w / 2)]
-        θ_counter += len(range(n_wires)[:-1:2])
+            _apply_rzz(thetas[θ_counter], [w, w + 1])
+            θ_counter += 1
 
         # Look at ever other wire, offset by 1, skipping the last one
         for w in range(n_wires)[1:-1:2]:
-            _apply_rzz(thetas[θ_counter + int(w / 2)], [w, w + 1])
-            mapping[θ_counter + int(w / 2)] = thetas[θ_counter + int(w / 2)]
-        θ_counter += len(range(n_wires)[1:-1:2])
+            _apply_rzz(thetas[θ_counter], [w, w + 1])
+            θ_counter += 1
 
     return θ_counter
-
 
 def _apply_rzz(theta, wires):
     """Double Qubit gates
