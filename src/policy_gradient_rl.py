@@ -1,9 +1,10 @@
 from typing import List
-from .constants import *
+from constants import *
 import numpy as np
-from .policy_gradient_vqa import *
+from policy_gradient_vqa import *
 from scipy.stats import multivariate_normal
 from multiprocessing import Pool
+from scipy.stats import unitary_group
 
 RAND_SEED = np.random.default_rng()
 

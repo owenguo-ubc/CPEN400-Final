@@ -5,7 +5,6 @@ from src.policy_gradient_rl import pgrl_algorithm
 import matplotlib.pyplot as plt
 from src.constants import NUM_LAYERS
 from src.policy_gradient_vqa import projection_norm_squared, _create_anzatz_circuit
-from src.policy_gradient_rl import _get_uniform_k
 import numpy as np
 
 # Test constants

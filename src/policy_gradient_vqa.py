@@ -1,4 +1,5 @@
 import pennylane as qml
+from scipy.stats import unitary_group
 import numpy as np
 import argparse
 from typing import List
@@ -83,13 +84,7 @@ def _apply_rzz(theta, wires):
     :param wires: The wires
 
     """
-    D = [
-        np.exp(-1j / 2 * theta),
-        np.exp(1j / 2 * theta),
-        np.exp(1j / 2 * theta),
-        np.exp(-1j / 2 * theta),
-    ]
-    qml.DiagonalQubitUnitary(D, wires=wires)
+    qml.MultiRZ(theta, wires=wires)
 
 
 def build_vqa_qnode(unitary) -> qml.QNode:
@@ -136,10 +131,36 @@ if __name__ == "__main__":
     args = parser.parse_args()
     size = 2 ** (int(args.num_qubits))
     layers = int(args.num_layers)
-    U = np.identity(size)
+    U = unitary_group.rvs(2 ** int(args.num_qubits))
+
+    RAND_SEED = np.random.default_rng()
+
+    def _get_uniform_k(num_qubits):
+        """Generator a random state vector.
+
+        Largely derived from the Qiskit implementation of random_statevector(dims, seed=None)
+
+        The statevector is sampled from the uniform (Haar) measure.
+
+        Args:
+            num_qubits: the number of qubits to generate.
+            seed: An np.random.Generator (eg. np.random.default_rng())
+
+        Returns:
+            A random state sampled from the Haar measure
+        """
+        rng = RAND_SEED
+        terms = 2 ** num_qubits
+        # Random array over interval (0, 1]
+        x = rng.random(terms)
+        x += x == 0
+        x = -np.log(x)
+        sumx = sum(x)
+        phases = rng.random(terms) * 2.0 * np.pi
+        return np.sqrt(x / sumx) * np.exp(1j * phases)
 
     print(
         qml.draw(build_vqa_qnode(U))(
-            range(size), range(layers * 2 * (int(args.num_qubits))), n_layers=layers
+             _get_uniform_k(int(args.num_qubits)), range(layers * 2 * (int(args.num_qubits))), n_layers=layers
         )
     )
