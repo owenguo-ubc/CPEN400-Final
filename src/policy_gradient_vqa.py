@@ -1,7 +1,6 @@
 import pennylane as qml
 import numpy as np
 import argparse
-from typing import List
 
 
 def _create_anzatz_circuit(n_wires, thetas, n_layers=1):
@@ -76,6 +75,7 @@ def _create_anzatz_circuit(n_wires, thetas, n_layers=1):
 
     return θ_counter
 
+
 def _apply_rzz(theta, wires):
     """Double Qubit gates
 
@@ -124,7 +124,7 @@ def projection_norm_squared(a, b):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Quiz3")
+    parser = argparse.ArgumentParser(description="PGRL Ansatz Debug")
     parser.add_argument(
         "--num_qubits",
         help="How many qubits should we create the test unitary for",

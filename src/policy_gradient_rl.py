@@ -1,27 +1,26 @@
-from typing import List
 from .constants import *
 import numpy as np
 from .policy_gradient_vqa import *
 from scipy.stats import multivariate_normal
-from multiprocessing import Pool
 
 RAND_SEED = np.random.default_rng()
 
-def _sample_gaussian_policy(mu: List[float], sigm) -> List[float]:
+
+def _sample_gaussian_policy(mu, sigm):
     """
     Sample policy and return list of thetas
     """
     return np.random.multivariate_normal(mu, sigm)
 
 
-def _lookup_gaussian(mu: List[float], sigma, x) -> float:
+def _lookup_gaussian(mu, sigma, x):
     """
     Given x (which is vector) what is the probability of that occuring in the gaussian function given mu and sigma
     """
     return multivariate_normal.pdf(x, mean=mu, cov=sigma)
 
 
-def _get_covariance(n_val: int, timestep: int) -> np.array:
+def _get_covariance(n_val, timestep):
     """
     This implements the formula on the bottom of page 9
     covariance(t) = ((1 - t/ T) * sigma_i) + (t / (T * sigma_f))
@@ -64,7 +63,7 @@ def _get_uniform_k(num_qubits):
     return np.sqrt(x / sumx) * np.exp(1j * phases)
 
 
-def _evaluate_fidelity(unitary, thetas: List[float], k):
+def _evaluate_fidelity(unitary, thetas, k):
     """
     This function will run the ansatz circuit and then project the result onto |k>
     This is gonna the QNode then do the state projection
@@ -79,7 +78,7 @@ def _evaluate_fidelity(unitary, thetas: List[float], k):
     return projection_norm_squared(state, k)
 
 
-def _evaluate_objective_function(m_val, num_qubits, unitary, mu, sigm) -> float:
+def _evaluate_objective_function(m_val, num_qubits, unitary, mu, sigm):
     """
     Implements equation 3
     """
@@ -120,13 +119,17 @@ def _estimate_gradient(n_val, m_val, num_qubits, unitary, mu, sigma):
 
 
 def _log_likelyhood_gradient_mu(mu, sigma, thetas):
+    """
+    Appendix A eqn. 10
+    """
     return np.linalg.inv(sigma).dot((thetas - mu))
 
 
 def _gradient_variance(previous_variance, current_gradient):
-    return (GAMMA * previous_variance) + (
-        (1 - GAMMA) * (np.square(current_gradient))
-    )
+    """
+    Appendix A eqn. 12
+    """
+    return (GAMMA * previous_variance) + ((1 - GAMMA) * (np.square(current_gradient)))
 
 
 def _step_and_optimize_mu(old_mu, previous_variance, mu_gradient):
@@ -150,6 +153,7 @@ def pgrl_algorithm(num_qubits, unitary):
     # From page 10
     M_VAL = max(15 * num_qubits, num_qubits ** 2)
 
+    # Initial values for policy parameters and RMSProp
     mu = np.zeros(N_VAL)
     sigma = _get_covariance(N_VAL, 0)
     gradient_variance = np.zeros(N_VAL)
@@ -160,15 +164,18 @@ def pgrl_algorithm(num_qubits, unitary):
     gradient_variances = []
     gradient_estimation = []
 
+    # Main optimization loop
     for i in range(1, NUM_ITERATIONS):
         print(f"DEBUG: Iteration: {i}")
 
+        # Evaluation the current policy parameters
         J_step = []
         for _ in range(GRAPH_NUM):
             J_step.append(_evaluate_objective_function(M_VAL, num_qubits, unitary, mu, sigma))
 
         J.append(J_step)
 
+        # Perform optimization of mean values and keep track of debug information
         grad_est = _estimate_gradient(N_VAL, M_VAL, num_qubits, unitary, mu, sigma)
         gradient_estimation.append(grad_est)
         mu, gradient_variance = _step_and_optimize_mu(mu, gradient_variance, grad_est)
