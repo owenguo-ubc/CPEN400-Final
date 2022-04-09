@@ -30,9 +30,9 @@ def _get_covariance(n_val, timestep):
     :param dimension: The dimension of the diagonal matrices
     """
     # Dynamically create sigma_i which is diag(10^-2) of n by n where n is number of thetas
-    sigma_i = np.diag([10 ** -2 for _ in range(n_val)])
+    sigma_i = np.diag([10**-2 for _ in range(n_val)])
     # Dynamically create sigma_f which is diag(10^-5) of n by n where n is number of thetas
-    sigma_f = np.diag([10 ** -5 for _ in range(n_val)])
+    sigma_f = np.diag([10**-5 for _ in range(n_val)])
     # Compute the covariance to return
     covariance = ((1 - (timestep / T_VAL)) * sigma_i) + ((timestep / T_VAL) * sigma_f)
     return covariance
@@ -53,7 +53,7 @@ def _get_uniform_k(num_qubits):
         A random state sampled from the Haar measure
     """
     rng = RAND_SEED
-    terms = 2 ** num_qubits
+    terms = 2**num_qubits
     # Random array over interval (0, 1]
     x = rng.random(terms)
     x += x == 0
@@ -151,7 +151,7 @@ def pgrl_algorithm(num_qubits, unitary):
     N_VAL = (2 * num_qubits - 1) * NUM_LAYERS
 
     # From page 10
-    M_VAL = max(15 * num_qubits, num_qubits ** 2)
+    M_VAL = max(15 * num_qubits, num_qubits**2)
 
     # Initial values for policy parameters and RMSProp
     mu = np.zeros(N_VAL)

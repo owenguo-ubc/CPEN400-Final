@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 NUM_QUBITS = 5
 
 # Choose a random unitary to approximate
-unitary = unitary_group.rvs(2 ** NUM_QUBITS)
+unitary = unitary_group.rvs(2**NUM_QUBITS)
 
 # Run the policy gradient algorithm
 mus, sigmas, J, gradient_variances, gradient_estimation = pgrl_algorithm(NUM_QUBITS, unitary)
