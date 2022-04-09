@@ -31,3 +31,17 @@ optional arguments:
   --num_layers NUM_LAYERS
                         How many layers should be in the anzatz
 ```
+
+### Team Contributions
+
+Owen: Wrote reinforcement learning algorithm
+
+Akhil: Wrote dynamic ansatz circuit creation
+
+Ross: Wrote code for evaluating multiple parts needed by reinforcement algorithm
+
+Kobe: Wrote code for sampling random states and projection
+
+All: Companion report and presentation slides
+
+Note that the github commit history might not be accurate since a lot of the work was done on visual studio code live share via pair programming
